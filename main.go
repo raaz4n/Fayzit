@@ -1,51 +1,23 @@
 package main
 
 import (
-	"fmt"
+	"Fayzit-discord-bot/bot"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 )
 
-func e() {
-	enverr := godotenv.Load()
-	if enverr != nil {
-		panic(enverr)
+func main() {
+	// env. variables
+	botToken, exist := os.LookupEnv("TOKEN")
+	if !exist {
+		log.Fatal("Must set Discord bot token as environment variable: TOKEN")
+	}
+	faceitToken, exist := os.LookupEnv("FACEIT")
+	if !exist {
+		log.Fatal("Must set FACEIT API token as environment variable: FACEIT ")
 	}
 
-	discToken := os.Getenv("TOKEN")
-	newString := fmt.Sprintf("Bot %s", discToken)
-
-	sesh, err := discordgo.New(newString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sesh.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.ID == s.State.User.ID {
-			return
-		}
-
-		if m.Content == "hello" {
-			s.ChannelMessageSend(m.ChannelID, "world")
-		}
-	})
-
-	sesh.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
-
-	err = sesh.Open()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer sesh.Close()
-
-	fmt.Println("Online!")
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+	bot.BotToken = botToken
+	bot.FaceitToken = faceitToken
+	bot.Run()
 }
