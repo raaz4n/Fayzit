@@ -44,7 +44,7 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 
 	switch {
-	case strings.Contains(message.Content, "stats"):
+	case strings.Contains(message.Content, "faceit"):
 		discord.ChannelMessageSend(message.ChannelID, "I can help with that.")
 	case strings.Contains(message.Content, "bot"):
 		discord.ChannelMessageSend(message.ChannelID, "sup!")
