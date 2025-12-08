@@ -4,18 +4,20 @@ import (
 	"Fayzit-discord-bot/bot"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	// env. variables
-	botToken, exist := os.LookupEnv("TOKEN")
-	if !exist {
-		log.Fatal("Must set Discord bot token as environment variable: TOKEN")
-	}
-	faceitToken, exist := os.LookupEnv("FACEIT")
-	if !exist {
-		log.Fatal("Must set FACEIT API token as environment variable: FACEIT ")
-	}
+	botToken := os.Getenv("TOKEN")
+	faceitToken := os.Getenv("FACEIT")
 
 	bot.BotToken = botToken
 	bot.FaceitToken = faceitToken

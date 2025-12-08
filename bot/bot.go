@@ -44,11 +44,9 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 
 	switch {
-	case strings.Contains(message.Content, "faceit"):
-		discord.ChannelMessageSend(message.ChannelID, "I can help with that.")
-	case strings.Contains(message.Content, "bot"):
-		discord.ChannelMessageSend(message.ChannelID, "sup!")
-	case strings.Contains(message.Content, "!stats"):
+	case strings.HasPrefix(message.Content, "faceit"):
+		discord.ChannelMessageSend(message.ChannelID, "I can help with that! Use !stats <username>")
+	case strings.HasPrefix(message.Content, "!stats"):
 		faceitUser := getCurrentUser(message.Content)
 		discord.ChannelMessageSendComplex(message.ChannelID, faceitUser)
 	}

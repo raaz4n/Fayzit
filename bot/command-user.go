@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -28,10 +28,10 @@ type FaceitData struct {
 }
 
 func getCurrentUser(message string) *discordgo.MessageSend {
-	r, _ := regexp.Compile(`\w{3,}`)
-	user := r.FindString(message)
+	sep := "!stats "
+	_, user, found := strings.Cut(message, sep)
 
-	if user == "" {
+	if !found {
 		return &discordgo.MessageSend{
 			Content: "Sorry, that username doesn't look right",
 		}
@@ -42,18 +42,24 @@ func getCurrentUser(message string) *discordgo.MessageSend {
 	// new HTTP client & timeout
 	client := http.Client{Timeout: 5 * time.Second}
 
-	response, err := client.Get(faceitURL)
+	req, err := http.NewRequest("GET", faceitURL, nil)
 	if err != nil {
 		return &discordgo.MessageSend{
 			Content: "Sorry, there was an error trying to get stats (Possibly API key issue?).",
 		}
 	}
 
+	var bearer = "Bearer " + string(FaceitToken)
+
+	req.Header.Add("Authorization", bearer)
+	resp, err := client.Do(req)
+
 	// HTTP response body
-	body, _ := io.ReadAll(response.Body)
-	defer response.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
 
 	var data FaceitData
+
 	json.Unmarshal([]byte(body), &data)
 
 	// pull out info
@@ -72,12 +78,12 @@ func getCurrentUser(message string) *discordgo.MessageSend {
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Elo",
-					Value:  elo + "elo",
+					Value:  elo + " elo",
 					Inline: true,
 				},
 				{
 					Name:   "Level",
-					Value:  "Level" + faceitlvl,
+					Value:  "Level " + faceitlvl,
 					Inline: true,
 				},
 				{
