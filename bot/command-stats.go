@@ -27,7 +27,8 @@ type FaceitData struct {
 	Country   string `json:"country"`
 }
 
-func getCurrentUser(message string) *discordgo.MessageSend {
+func getCurrentStats(message string) *discordgo.MessageSend {
+	// separate nickname from string
 	sep := "!stats "
 	_, user, found := strings.Cut(message, sep)
 
@@ -37,7 +38,10 @@ func getCurrentUser(message string) *discordgo.MessageSend {
 		}
 	}
 
-	faceitURL := fmt.Sprintf("%snickname=%s", URL, user)
+	formattedUser := searchUser(user)
+	fmt.Println(formattedUser)
+
+	faceitURL := fmt.Sprintf("%snickname=%s", URL, formattedUser)
 
 	// new HTTP client & timeout
 	client := http.Client{Timeout: 5 * time.Second}
