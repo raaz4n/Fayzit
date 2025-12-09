@@ -39,7 +39,6 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 	}
 
 	formattedUser := searchUser(user)
-	fmt.Println(formattedUser)
 
 	faceitURL := fmt.Sprintf("%snickname=%s", URL, formattedUser)
 
@@ -78,7 +77,7 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 		Embeds: []*discordgo.MessageEmbed{{
 			Type:        discordgo.EmbedTypeRich,
 			Title:       "User Stats",
-			Description: "Stats for " + username,
+			Description: "Stats for [" + username + "](https://www.faceit.com/en/players/" + username + ")",
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Elo",

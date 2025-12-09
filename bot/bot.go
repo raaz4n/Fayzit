@@ -44,8 +44,6 @@ func newMessage(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 
 	switch {
-	case strings.HasPrefix(message.Content, "faceit"):
-		discord.ChannelMessageSend(message.ChannelID, "I can help with that! Use !stats <username>")
 	case strings.HasPrefix(message.Content, "!stats"):
 		faceitUser := getCurrentStats(message.Content)
 		discord.ChannelMessageSendComplex(message.ChannelID, faceitUser)
