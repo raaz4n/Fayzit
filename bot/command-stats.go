@@ -12,10 +12,11 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const URL string = "https://open.faceit.com/data/v4/players?"
+const pURL string = "https://open.faceit.com/data/v4/players?"
 
 type FaceitData struct {
-	Games struct {
+	Avatar string `json:"avatar"`
+	Games  struct {
 		Cs2 struct {
 			Faceit_Elo  int64  `json:"faceit_elo"`
 			Region      string `json:"region"`
@@ -40,7 +41,7 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 
 	formattedUser := searchUser(user)
 
-	faceitURL := fmt.Sprintf("%snickname=%s", URL, formattedUser)
+	faceitURL := fmt.Sprintf("%snickname=%s", pURL, formattedUser)
 
 	// new HTTP client & timeout
 	client := http.Client{Timeout: 5 * time.Second}
@@ -66,18 +67,31 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 	json.Unmarshal([]byte(body), &data)
 
 	// pull out info
+	avatar := data.Avatar
 	username := data.Nickname
 	elo := strconv.FormatInt(data.Games.Cs2.Faceit_Elo, 10)
 	faceitlvl := strconv.FormatInt(data.Games.Cs2.Skill_level, 10)
 	region := data.Games.Cs2.Region
+	upperregion := strings.ToUpper(region)
 	usercountry := data.Country
+	uppercountry := strings.ToUpper(usercountry)
+
+	var regionstring string
+
+	switch region {
+	case "EU":
+		regionstring = ":flag_eu:"
+	}
 
 	// embed response
 	embed := &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{{
+			Thumbnail: &discordgo.MessageEmbedThumbnail{
+				URL: avatar,
+			},
 			Type:        discordgo.EmbedTypeRich,
-			Title:       "User Stats",
-			Description: "Stats for [" + username + "](https://www.faceit.com/en/players/" + username + ")",
+			Title:       username + "'s Stats",
+			Description: "**[FACEIT](https://www.faceit.com/en/players/" + username + ")**",
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Elo",
@@ -91,12 +105,12 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 				},
 				{
 					Name:   "Region",
-					Value:  region,
+					Value:  upperregion + regionstring,
 					Inline: true,
 				},
 				{
 					Name:   "Country",
-					Value:  usercountry,
+					Value:  uppercountry + " :flag_" + usercountry + ":",
 					Inline: true,
 				},
 			},

@@ -41,7 +41,7 @@ func searchUser(message string) string {
 	var data SearchData
 	json.Unmarshal([]byte(body), &data)
 
-	var temp string
+	temp := data.Items[0].Nickname
 	// pull info
 out:
 	for i := range 20 {
