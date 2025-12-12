@@ -12,7 +12,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const pURL string = "https://open.faceit.com/data/v4/players?"
+const pURL string = "https://open.faceit.com/data/v4/players"
 
 type FaceitData struct {
 	Avatar string `json:"avatar"`
@@ -23,25 +23,26 @@ type FaceitData struct {
 			Skill_level int64  `json:"skill_level"`
 		} `json:"cs2"`
 	} `json:"games"`
-	Nickname  string `json:"nickname"`
-	Player_ID string `json:"player_id"`
-	Country   string `json:"country"`
+	Nickname string `json:"nickname"`
+	Steam_ID string `json:"steam_id_64"`
+	Country  string `json:"country"`
 }
 
-func getCurrentStats(message string) *discordgo.MessageSend {
-	// separate nickname from string
-	sep := "!stats "
-	_, user, found := strings.Cut(message, sep)
+func getCurrentStats(message string, searchType string) *discordgo.MessageSend {
+	var faceitURL string
 
-	if !found {
-		return &discordgo.MessageSend{
-			Content: "Sorry, that username doesn't look right",
+	switch searchType {
+	case "faceit-username":
+		formattedUser := searchUser(message)
+		if formattedUser == "" {
+			return &discordgo.MessageSend{
+				Content: "Sorry, unable to find user \"" + message + "\", make sure you entered a valid user",
+			}
 		}
+		faceitURL = fmt.Sprintf("%s?nickname=%s", pURL, formattedUser)
+	case "steam-id":
+		faceitURL = fmt.Sprintf("%s?game_player_id=%s", pURL, message)
 	}
-
-	formattedUser := searchUser(user)
-
-	faceitURL := fmt.Sprintf("%snickname=%s", pURL, formattedUser)
 
 	// new HTTP client & timeout
 	client := http.Client{Timeout: 5 * time.Second}
@@ -95,12 +96,12 @@ func getCurrentStats(message string) *discordgo.MessageSend {
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Elo",
-					Value:  elo + " elo",
+					Value:  elo,
 					Inline: true,
 				},
 				{
 					Name:   "Level",
-					Value:  "Level " + faceitlvl,
+					Value:  faceitlvl,
 					Inline: true,
 				},
 				{
