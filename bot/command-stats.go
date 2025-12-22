@@ -24,7 +24,6 @@ type FaceitData struct {
 		} `json:"cs2"`
 	} `json:"games"`
 	Nickname string `json:"nickname"`
-	Steam_ID string `json:"steam_id_64"`
 	Country  string `json:"country"`
 }
 
@@ -36,12 +35,18 @@ func getCurrentStats(message string, searchType string) *discordgo.MessageSend {
 		formattedUser := searchUser(message)
 		if formattedUser == "" {
 			return &discordgo.MessageSend{
-				Content: "Sorry, unable to find user \"" + message + "\", make sure you entered a valid user",
+				Content: "Sorry, unable to find user \"" + message + "\", make sure you entered a proper FACEIT username",
 			}
 		}
-		faceitURL = fmt.Sprintf("%s?nickname=%s", pURL, formattedUser)
+		faceitURL = fmt.Sprintf("%s?game=cs2&nickname=%s", pURL, formattedUser)
 	case "steam-id":
-		faceitURL = fmt.Sprintf("%s?game_player_id=%s", pURL, message)
+		steamID := getSteamName(message)
+		if steamID == "" {
+			return &discordgo.MessageSend{
+				Content: "Sorry, unable to find user \"" + message + "\", make sure you entered a proper Steam ID (either custom URL or ID64)",
+			}
+		}
+		faceitURL = fmt.Sprintf("%s?game=cs2&game_player_id=%s", pURL, steamID)
 	}
 
 	// new HTTP client & timeout
