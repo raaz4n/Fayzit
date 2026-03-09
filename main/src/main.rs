@@ -1,3 +1,4 @@
+mod commands;
 use dotenv::dotenv;
 use std::env;
 
@@ -29,7 +30,6 @@ async fn main() {
 
     // client setup
     let mut client = Client::builder(&token, intents).event_handler(Handler).await.expect("Error creating client");
-
     if let Err(why) = client.start().await {
         println!("Client err: {why:?}");
     }
