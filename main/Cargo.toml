@@ -6,7 +6,7 @@ edition = "2024"
 description = "Testing this bot using Rust."
 
 [dependencies]
-serenity = "0.12"
+dotenv = "0.15.0"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 
 [dependencies.serenity]
