@@ -16,5 +16,5 @@ pub struct SearchItems {
 
 pub async fn search_user(_message: &str) -> String {
     let test = String::new();
-    test
+    return test;
 }
