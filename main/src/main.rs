@@ -1,7 +1,6 @@
 mod commands;
 mod config;
 use dotenv::dotenv;
-use std::env;
 
 use serenity::async_trait;
 use serenity::model::gateway::Ready;
@@ -28,7 +27,7 @@ async fn main() {
         | GatewayIntents::MESSAGE_CONTENT;
 
     // client setup
-    let mut client = Client::builder(*config::BOTTOKEN, intents).event_handler(Handler).await.expect("Error creating client");
+    let mut client = Client::builder(&*config::BOTTOKEN, intents).event_handler(Handler).await.expect("Error creating client");
     if let Err(why) = client.start().await {
         println!("Client err: {why:?}");
     }
