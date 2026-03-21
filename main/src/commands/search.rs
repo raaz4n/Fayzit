@@ -76,3 +76,47 @@ pub async fn search_user(_message: &str) -> String {                    // searc
 
     return temp;                                                        // return username from search or empty string based on if user exists or not
 }
+
+pub async fn getsteamname(_message: &str) -> String {                   // gets steam ID64
+    let mut name = String::new();
+    let mut steamurl = String::new();
+
+    'link:
+        for i in 0..2 {
+            if i == 0 {                                                 // use steams API with XML based on user input
+                steamurl = format!("http://steamcommunity.com/id{}/?xml=1", _message);
+            }
+            else {
+                steamurl = format!("http://steamcommunity.com/profiles/{}/?xml=1", _message);
+            }
+
+            let client = reqwest::Client::builder()                     // client timeout
+                .timeout(Duration::from_secs(5))
+                .build()
+                .unwrap();
+            
+            let req = match client.get(&steamurl)
+                .send()
+                .await
+            {
+                Ok(response) => response,
+                Err(error) => {
+                    println!("Bad request: {error}");
+                    return String::new();
+                }
+            };
+
+            let body = match req.text().await {
+                Ok(response) => response,
+                Err(_) => return String::new(),
+            };
+
+            let data: SteamData = quick_xml::de::from_str(&body).unwrap();
+            name = data.steamid64;                                      // get the ID64 from the user to search FACEITs API
+            if name.is_empty(){
+                break 'link;
+            }
+        }
+    
+    return name;
+}
