@@ -1,4 +1,5 @@
 mod commands;
+mod config;
 use dotenv::dotenv;
 use std::env;
 
@@ -20,8 +21,6 @@ impl EventHandler for Handler {
 async fn main() {
     // load .env, ignore errors
     dotenv().ok();
-    // client config with .env bot token
-    let token = env::var("TOKEN").expect("Need a token for the Discord bot");
 
     // setting gateway intents, decides what events bot will be notified of
     let intents = GatewayIntents::GUILD_MESSAGES
@@ -29,7 +28,7 @@ async fn main() {
         | GatewayIntents::MESSAGE_CONTENT;
 
     // client setup
-    let mut client = Client::builder(&token, intents).event_handler(Handler).await.expect("Error creating client");
+    let mut client = Client::builder(*config::BOTTOKEN, intents).event_handler(Handler).await.expect("Error creating client");
     if let Err(why) = client.start().await {
         println!("Client err: {why:?}");
     }
