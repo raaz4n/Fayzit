@@ -67,7 +67,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
         .await
     {
         Ok(response) => response,
-        Err(error) => {
+        Err(_) => {
             return CreateMessage::new()
                 .content("Sorry, there was an error trying to get stats (Possibly an API key issue?).");
         }

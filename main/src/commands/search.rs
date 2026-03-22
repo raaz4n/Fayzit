@@ -79,16 +79,16 @@ pub async fn search_user(_message: &str) -> String {                    // searc
 
 pub async fn getsteamname(_message: &str) -> String {                   // gets steam ID64
     let mut name = String::new();
-    let mut steamurl = String::new();
 
     'link:
         for i in 0..2 {
-            if i == 0 {                                                 // use steams API with XML based on user input
-                steamurl = format!("http://steamcommunity.com/id{}/?xml=1", _message);
-            }
-            else {
-                steamurl = format!("http://steamcommunity.com/profiles/{}/?xml=1", _message);
-            }
+            let steamurl =
+                if i == 0 {                                                 // use steams API with XML based on user input
+                    format!("http://steamcommunity.com/id/{}/?xml=1", _message)
+                }
+                else {
+                    format!("http://steamcommunity.com/profiles/{}/?xml=1", _message)
+                };
 
             let client = reqwest::Client::builder()                     // client timeout
                 .timeout(Duration::from_secs(5))
