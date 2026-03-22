@@ -36,7 +36,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
 
     match searchtype {
         "faceit-username" => {
-            let formatteduser = search_user(_message);
+            let formatteduser = search_user(_message).await;
             if formatteduser.is_empty() {
                 return CreateMessage::new()
                     .content(format!("Sorry, unable to find user \"{_message} \", make sure you entered a proper FACEIT username"))
@@ -45,14 +45,15 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
             faceiturl = format!("{}?game=cs2&nickname={}", P_URL, formatteduser);
         },
         "steam-id" => {
-            let steamid = getsteamname(_message);
+            let steamid = getsteamname(_message).await;
             if steamid.is_empty() {
                 return CreateMessage::new()
                     .content(format!("Sorry, unable to find user \" {_message} \", make sure you entered a proper Steam ID (either custom URL or ID64"))
                     .flags(MessageFlags::EPHEMERAL);
             }
             faceiturl = format!("{}?game=cs2&game_player_id={}", P_URL, steamid);
-        }
+        },
+        _ => {}
     }
 
     let client = reqwest::Client::builder()
@@ -121,7 +122,8 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
         },
         "10" => {
             lvlstring = "<:10:1456394429362475283>".to_string();
-        }
+        },
+        _ => {}
     }
 
     match region.as_str() {
@@ -139,13 +141,14 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
         },
         "SEA" => {
             regionstring = "<:SEA:1456425728252842034>".to_string();
-        }
+        },
+        _ => {}
     }
 
     let embeds = CreateEmbed::new()
         .thumbnail(avatar)
         .title(format!("{username}'s Stats"))
-        .description([FACEIT]format!("https://www.faceit.com/en/players/{username}"))
+        .description(format!("[FACEIT]https://www.faceit.com/en/players/{username}"))
         .field("Elo", &elo, true)
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
