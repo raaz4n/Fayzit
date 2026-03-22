@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use reqwest;
 use std::time::Duration;
-use serenity::{all::MessageFlags, builder::{CreateMessage, CreateEmbed}};
+use serenity::{all::{CommandOptionType, CreateCommandOption, CreateCommand, MessageFlags}, builder::{CreateEmbed, CreateMessage}};
 use crate::config::FACEITTOKEN;
 use crate::commands::search::search_user;
 use crate::commands::search::getsteamname;
@@ -155,4 +155,11 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
         .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
 
     return CreateMessage::new().embed(embeds);
+}
+
+pub fn statistics() -> CreateCommand {
+    CreateCommand::new("stats")
+        .description("Get a users FACEIT stats")
+        .add_option(CreateCommandOption::new(CommandOptionType::String, "faceit-username", "Search for the user by FACEIT username").required(false))
+        .add_option(CreateCommandOption::new(CommandOptionType::String, "steam-id", "Search for the user by Steam ID").required(false))
 }
