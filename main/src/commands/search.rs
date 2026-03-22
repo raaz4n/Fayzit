@@ -49,7 +49,7 @@ pub async fn search_user(_message: &str) -> String {                    // searc
         Err(_) => return String::new(),
     };
 
-    let data : SearchData = serde_json::from_str(&body).unwrap();       // get the nicknames from the JSON parse
+    let data: SearchData = serde_json::from_str(&body).unwrap();       // get the nicknames from the JSON parse
 
     let mut temp = String::new();
     let count = data.items.len();                                       // if there are no users returned by the search
