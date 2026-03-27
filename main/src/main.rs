@@ -13,7 +13,17 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
+            let content = match command.data.name.as_str() {
+                "stats" => Some(commands::stats::run(&ctx, &command).await),
+                _ => None,
+            };
 
+            if let Some(content) = content {
+                let builder = CreateInteractionResponse::Message(content);
+                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                    println!("Cannot respond to the slash command: {why}");
+                }
+            }
         }
     }
     

@@ -49,7 +49,7 @@ pub async fn search_user(_message: &str) -> String {                    // searc
         Err(_) => return String::new(),
     };
 
-    let data: SearchData = serde_json::from_str(&body).unwrap();       // get the nicknames from the JSON parse
+    let data: SearchData = serde_json::from_str(&body).unwrap();        // get the nicknames from the JSON parse
 
     let mut temp = String::new();
     let count = data.items.len();                                       // if there are no users returned by the search
@@ -111,7 +111,13 @@ pub async fn getsteamname(_message: &str) -> String {                   // gets 
                 Err(_) => return String::new(),
             };
 
-            let data: SteamData = quick_xml::de::from_str(&body).unwrap();
+            //let data: SteamData = quick_xml::de::from_str(&body).unwrap();
+            let data: SteamData = match quick_xml::de::from_str(&body) {
+                Ok(d) => d,
+                Err(e) => {
+                    continue;
+                }
+            };
             name = data.steamid64;                                      // get the ID64 from the user to search FACEITs API
             if name.is_empty(){
                 break 'link;

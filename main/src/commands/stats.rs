@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use reqwest;
 use std::time::Duration;
-use serenity::{all::{CommandOptionType, CreateCommandOption, CreateCommand, MessageFlags}, builder::{CreateEmbed, CreateMessage}};
+use serenity::{all::{CommandInteraction, CommandOptionType, Context, CreateCommand, CreateCommandOption, CreateInteractionResponseMessage, InteractionResponseFlags, MessageFlags, ResolvedValue}, builder::{CreateEmbed, CreateMessage}};
 use crate::config::FACEITTOKEN;
 use crate::commands::search::search_user;
 use crate::commands::search::getsteamname;
@@ -30,7 +30,7 @@ pub struct Cs2 {
     skill_level_label: String,
 }
 
-pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessage {
+pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateInteractionResponseMessage {
     let mut faceiturl = String::new();
     // let mut leaderboardurl = String::new();  (this will come later for leaderboard spots)
 
@@ -38,18 +38,18 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
         "faceit-username" => {
             let formatteduser = search_user(_message).await;
             if formatteduser.is_empty() {
-                return CreateMessage::new()
+                return CreateInteractionResponseMessage::new()
                     .content(format!("Sorry, unable to find user \"{_message} \", make sure you entered a proper FACEIT username"))
-                    .flags(MessageFlags::EPHEMERAL);
+                    .flags(InteractionResponseFlags::EPHEMERAL);
             }
             faceiturl = format!("{}?game=cs2&nickname={}", P_URL, formatteduser);
         },
         "steam-id" => {
             let steamid = getsteamname(_message).await;
             if steamid.is_empty() {
-                return CreateMessage::new()
+                return CreateInteractionResponseMessage::new()
                     .content(format!("Sorry, unable to find user \" {_message} \", make sure you entered a proper Steam ID (either custom URL or ID64"))
-                    .flags(MessageFlags::EPHEMERAL);
+                    .flags(InteractionResponseFlags::EPHEMERAL);
             }
             faceiturl = format!("{}?game=cs2&game_player_id={}", P_URL, steamid);
         },
@@ -68,14 +68,14 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
     {
         Ok(response) => response,
         Err(_) => {
-            return CreateMessage::new()
+            return CreateInteractionResponseMessage::new()
                 .content("Sorry, there was an error trying to get stats (Possibly an API key issue?).");
         }
     };
 
     let body = match req.text().await {
         Ok(response) => response,
-        Err(_) => return CreateMessage::new(),
+        Err(_) => return CreateInteractionResponseMessage::new(),
     };
 
     let data: FaceitData = serde_json::from_str(&body).unwrap();
@@ -148,13 +148,38 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateMessag
     let embeds = CreateEmbed::new()
         .thumbnail(avatar)
         .title(format!("{username}'s Stats"))
-        .description(format!("[FACEIT]https://www.faceit.com/en/players/{username}"))
+        .description(format!("[FACEIT](https://www.faceit.com/en/players/{})", username))
         .field("Elo", &elo, true)
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
         .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
 
-    return CreateMessage::new().embed(embeds);
+    return CreateInteractionResponseMessage::new().embed(embeds);
+}
+
+pub async fn run(ctx: &Context, command: &CommandInteraction) -> CreateInteractionResponseMessage {
+    let mut username = String::new();
+    let mut search_type = String::new();
+
+    for o in command.data.options() {
+        match o.name {
+            "faceit-username" => {
+                search_type = "faceit-username".to_string();
+                if let ResolvedValue::String(username_str) = o.value {
+                    username = username_str.to_string();
+                }
+            },
+            "steam-id" => {
+                search_type = "steam-id".to_string();
+                if let ResolvedValue::String(username_str) = o.value {
+                    username = username_str.to_string();
+                }
+            },
+            _ => {}
+        }
+    }
+    
+    get_current_stats(&username, &search_type).await
 }
 
 pub fn statistics() -> CreateCommand {
