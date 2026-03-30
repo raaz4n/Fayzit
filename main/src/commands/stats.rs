@@ -7,8 +7,8 @@ use crate::commands::search::search_user;
 use crate::commands::search::getsteamname;
 
 const P_URL: &str = "https://open.faceit.com/data/v4/players";
-const L_URL: &str = "https://open.faceit.com/data/v4/leaderboards";
 
+// struct setup for user information
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FaceitData {
     player_id: String,
@@ -18,12 +18,10 @@ pub struct FaceitData {
     country: String,
     steam_id_64: String,
 }
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Games {
     cs2: Cs2,
 }
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Cs2 {
     faceit_elo: i64,
@@ -32,44 +30,45 @@ pub struct Cs2 {
     skill_level_label: String,
 }
 
+// struct for finding leaderboard ranking
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Object {
     payload: i64,
 }
 
+// get current statistics using the username and search type (FACEIT username or custom steam ID)
 pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateInteractionResponseMessage {
-    let mut faceiturl = String::new();
-    // let mut leaderboardurl = String::new();  (this will come later for leaderboard spots)
+    let mut faceiturl = String::new();                                                          // FACEIT API URL
 
-    match searchtype {
-        "faceit-username" => {
-            let formatteduser = search_user(_message).await;
-            if formatteduser.is_empty() {
+    match searchtype {                                                      
+        "faceit-username" => {                                                                  // if the user wants to search by FACEIT username
+            let formatteduser = search_user(_message).await;                                    // use the search_user function to search for the proper user
+            if formatteduser.is_empty() {                                                       // if the user was not found, send an error message
                 return CreateInteractionResponseMessage::new()
                     .content(format!("Sorry, unable to find user \"{_message} \", make sure you entered a proper FACEIT username"))
                     .flags(InteractionResponseFlags::EPHEMERAL);
             }
-            faceiturl = format!("{}?game=cs2&nickname={}", P_URL, formatteduser);
+            faceiturl = format!("{}?game=cs2&nickname={}", P_URL, formatteduser);               // if the user was found, format the URL
         },
-        "steam-id" => {
-            let steamid = getsteamname(_message).await;
-            if steamid.is_empty() {
+        "steam-id" => {                                                                         // if the user wants to search by steam ID
+            let steamid = getsteamname(_message).await;                                         // use the getsteamname function to search via steam XML
+            if steamid.is_empty() {                                                             // if no user was found, send an error message
                 return CreateInteractionResponseMessage::new()
                     .content(format!("Sorry, unable to find user \" {_message} \", make sure you entered a proper Steam ID (either custom URL or ID64"))
                     .flags(InteractionResponseFlags::EPHEMERAL);
             }
-            faceiturl = format!("{}?game=cs2&game_player_id={}", P_URL, steamid);
+            faceiturl = format!("{}?game=cs2&game_player_id={}", P_URL, steamid);               // if the user was found, format the URL
         },
-        _ => {}
+        _ => {}                                                                                 // blank case
     }
 
-    let client = reqwest::Client::builder()
+    let client = reqwest::Client::builder()                                                     // create a client with a timeout req for 5 secs
         .timeout(Duration::from_secs(5))
         .build()
         .unwrap();
 
-    let req = match client.get(&faceiturl)
-        .bearer_auth(FACEITTOKEN.clone())
+    let req = match client.get(&faceiturl)                                                      // GET request on the faceiturl
+        .bearer_auth(FACEITTOKEN.clone())                                                       // requires FACEIT bearer auth token
         .send()
         .await
     {
@@ -80,14 +79,14 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         }
     };
 
-    let body = match req.text().await {
+    let body = match req.text().await {                                                         // get the body from the request text
         Ok(response) => response,
         Err(_) => return CreateInteractionResponseMessage::new(),
     };
 
-    let data: FaceitData = serde_json::from_str(&body).unwrap();
+    let data: FaceitData = serde_json::from_str(&body).unwrap();                                // use data as the JSON parse from request
 
-    let avatar = data.avatar;
+    let avatar = data.avatar;                                                                   // set all variables for statistics embed later
     let username = data.nickname;
     let elo = data.games.cs2.faceit_elo.to_string();
     let faceitlvl = data.games.cs2.skill_level.to_string();
@@ -97,11 +96,11 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     let uppercountry = usercountry.to_uppercase();
     let steam_id_64 = data.steam_id_64.to_string();
 
-    let player_id = data.player_id;
-    let mut challurl = String::new();
+    let player_id = data.player_id;                                                             // using the player id
+    let mut challurl = String::new();                                                           // find the users rank from FACEITs api ranking
     challurl = format!("https://www.faceit.com/api/ranking/v1/globalranking/cs2/{}/{}", upperregion, player_id);
     
-    let client2 = reqwest::Client::builder()
+    let client2 = reqwest::Client::builder()                                                    // using another client and req
         .timeout(Duration::from_secs(5))
         .build()
         .unwrap();
@@ -122,14 +121,14 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         Err(_) => return CreateInteractionResponseMessage::new(),
     };
 
-    let lb: Object = serde_json::from_str(&body2).unwrap();
+    let lb: Object = serde_json::from_str(&body2).unwrap();                                     // lb is set to the body to the GET response of the ranking URL
     let rankstr = lb.payload.to_string();
-    let rank = rankstr.parse::<i64>().unwrap();
+    let rank = rankstr.parse::<i64>().unwrap();                                                 // make sure that the rank from the payload is set to an i64
 
     let mut regionstring = String::new();
     let mut lvlstring = String::new();
 
-    match faceitlvl.as_str() {
+    match faceitlvl.as_str() {                                                                  // based on a users level, change the emote of the level
         "1" => {
             lvlstring = "<:1_:1456394440460468346>".to_string();
         },
@@ -164,10 +163,10 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     }
 
     if rank <= 1000 {
-        lvlstring = "<:challenger:1488174686088204419>".to_string();
+        lvlstring = "<:challenger:1488174686088204419>".to_string();                            // in the special case that a user is rank 1000 or higher, use the challenger emote
     }
 
-    match region.as_str() {
+    match region.as_str() {                                                                     // change the region emote based on which region the account is set to
         "EU" => {
             regionstring = ":flag_eu:".to_string();
         },
@@ -186,38 +185,38 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         _ => {}
     }
 
-    let formatted_username = username.replace("_", "\\_");
-    let mut embeds = CreateEmbed::new()
-        .thumbnail(avatar)
-        .title(format!("{formatted_username}'s Stats"))
-        .description(format!("[FACEIT](https://www.faceit.com/en/players/{})\n[Steam](https://steamcommunity.com/profiles/{})", username, steam_id_64))
-        .field("Elo", &elo, true)
-        .field("Level", format!("   {}", &lvlstring), true)
-        .field("Region", format!("{} {}", upperregion, regionstring), true)
-        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
+    let formatted_username = username.replace("_", "\\_");                                      // in case a username includes multiple underscores, make sure it formats properly to bypass Discord's message formatting
+    let mut embeds = CreateEmbed::new()                                                         // create the embed message
+        .thumbnail(avatar)                                                                      // avatar thumbnail
+        .title(format!("{formatted_username}'s Stats"))                                         // title with the formatted username
+        .description(format!("[FACEIT](https://www.faceit.com/en/players/{})\n[Steam](https://steamcommunity.com/profiles/{})", username, steam_id_64)) // links for FACEIT and Steam
+        .field("Elo", &elo, true)                                                               // get the elo
+        .field("Level", format!("   {}", &lvlstring), true)                                     // level emote
+        .field("Region", format!("{} {}", upperregion, regionstring), true)                     // region with the region emote
+        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);            // country with the country emote
 
     if rank <= 1000 {
-        embeds = embeds.field("Rank", format!("#{}", rank), true);
+        embeds = embeds.field("Rank", format!("#{}", rank), true);                              // if the user is within challenger ranking, add another embed field with their rank
     }
 
-    return CreateInteractionResponseMessage::new().embed(embeds);
+    return CreateInteractionResponseMessage::new().embed(embeds);                               // return the embed
 }
 
 pub async fn run(ctx: &Context, command: &CommandInteraction) -> CreateInteractionResponseMessage {
-    let mut username = String::new();
+    let mut username = String::new();                                                      
     let mut search_type = String::new();
 
     for o in command.data.options() {
         match o.name {
-            "faceit-username" => {
-                search_type = "faceit-username".to_string();
-                if let ResolvedValue::String(username_str) = o.value {
+            "faceit-username" => {                                                              // if the user wants to use a FACEIT username to search
+                search_type = "faceit-username".to_string();                                    // set search_type to it
+                if let ResolvedValue::String(username_str) = o.value {                          // set the username to the value typed by user
                     username = username_str.to_string();
                 }
             },
-            "steam-id" => {
-                search_type = "steam-id".to_string();
-                if let ResolvedValue::String(username_str) = o.value {
+            "steam-id" => {                                                                     // if the user wants to use a Steam ID to search
+                search_type = "steam-id".to_string();                                           // set search_type to it
+                if let ResolvedValue::String(username_str) = o.value {                          // set the steam ID to the value type by user
                     username = username_str.to_string();
                 }
             },
@@ -229,7 +228,7 @@ pub async fn run(ctx: &Context, command: &CommandInteraction) -> CreateInteracti
 }
 
 pub fn statistics() -> CreateCommand {
-    CreateCommand::new("stats")
+    CreateCommand::new("stats")                                                                 // command setup for 'stats'
         .description("Get a users FACEIT stats")
         .add_option(CreateCommandOption::new(CommandOptionType::String, "faceit-username", "Search for the user by FACEIT username").required(false))
         .add_option(CreateCommandOption::new(CommandOptionType::String, "steam-id", "Search for the user by Steam ID").required(false))
