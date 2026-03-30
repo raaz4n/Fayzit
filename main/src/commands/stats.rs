@@ -16,6 +16,7 @@ pub struct FaceitData {
     games: Games,
     nickname: String,
     country: String,
+    steam_id_64: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -94,6 +95,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     let upperregion = region.to_uppercase();
     let usercountry = data.country;
     let uppercountry = usercountry.to_uppercase();
+    let steam_id_64 = data.steam_id_64.to_string();
 
     let player_id = data.player_id;
     let mut challurl = String::new();
@@ -104,7 +106,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         .build()
         .unwrap();
 
-    let req2 = match client.get(&challurl)
+    let req2 = match client2.get(&challurl)
         .send()
         .await
     {
