@@ -11,6 +11,7 @@ const L_URL: &str = "https://open.faceit.com/data/v4/leaderboards";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FaceitData {
+    player_id: String,
     avatar: String,
     games: Games,
     nickname: String,
@@ -80,6 +81,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
 
     let data: FaceitData = serde_json::from_str(&body).unwrap();
 
+    let player_id = data.player_id;
     let avatar = data.avatar;
     let username = data.nickname;
     let elo = data.games.cs2.faceit_elo.to_string();
@@ -152,8 +154,8 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         .field("Elo", &elo, true)
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
-        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
-
+        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true)
+        .field("player_id", format!("{}", player_id), true);
     return CreateInteractionResponseMessage::new().embed(embeds);
 }
 

@@ -83,7 +83,7 @@ pub async fn getsteamname(_message: &str) -> String {                   // gets 
     'link:
         for i in 0..2 {
             let steamurl =
-                if i == 0 {                                                 // use steams API with XML based on user input
+                if i == 0 {                                             // use steams API with XML based on user input
                     format!("http://steamcommunity.com/id/{}/?xml=1", _message)
                 }
                 else {
