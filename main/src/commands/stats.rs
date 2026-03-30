@@ -31,6 +31,11 @@ pub struct Cs2 {
     skill_level_label: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Object {
+    payload: i64,
+}
+
 pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateInteractionResponseMessage {
     let mut faceiturl = String::new();
     // let mut leaderboardurl = String::new();  (this will come later for leaderboard spots)
@@ -81,7 +86,6 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
 
     let data: FaceitData = serde_json::from_str(&body).unwrap();
 
-    let player_id = data.player_id;
     let avatar = data.avatar;
     let username = data.nickname;
     let elo = data.games.cs2.faceit_elo.to_string();
@@ -90,6 +94,35 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     let upperregion = region.to_uppercase();
     let usercountry = data.country;
     let uppercountry = usercountry.to_uppercase();
+
+    let player_id = data.player_id;
+    let mut challurl = String::new();
+    challurl = format!("https://www.faceit.com/api/ranking/v1/globalranking/cs2/{}/{}", upperregion, player_id);
+    
+    let client2 = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+
+    let req2 = match client.get(&challurl)
+        .send()
+        .await
+    {
+        Ok(response) => response,
+        Err(_) => {
+            return CreateInteractionResponseMessage::new()
+                .content("Sorry, there was an error trying to get stats (Possibly an API key issue?).");
+        }
+    };
+
+    let body2 = match req2.text().await {
+        Ok(response) => response,
+        Err(_) => return CreateInteractionResponseMessage::new(),
+    };
+
+    let lb: Object = serde_json::from_str(&body2).unwrap();
+    let rank = lb.payload;
+    println!("{}", rank);
 
     let mut regionstring = String::new();
     let mut lvlstring = String::new();
@@ -130,7 +163,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
 
     match region.as_str() {
         "EU" => {
-            regionstring = "flag_eu:".to_string();
+            regionstring = ":flag_eu:".to_string();
         },
         "NA" => {
             regionstring = "<:NA:1456425380792500504>".to_string();
@@ -154,8 +187,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         .field("Elo", &elo, true)
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
-        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true)
-        .field("player_id", format!("{}", player_id), true);
+        .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
     return CreateInteractionResponseMessage::new().embed(embeds);
 }
 
