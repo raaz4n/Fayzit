@@ -189,7 +189,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     let mut embeds = CreateEmbed::new()
         .thumbnail(avatar)
         .title(format!("{username}'s Stats"))
-        .description(format!("[FACEIT](https://www.faceit.com/en/players/{})", username))
+        .description(format!("[FACEIT](https://www.faceit.com/en/players/{})\n[Steam](https://steamcommunity.com/profiles/{})", username, steam_id_64))
         .field("Elo", &elo, true)
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
