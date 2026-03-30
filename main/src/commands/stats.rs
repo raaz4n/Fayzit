@@ -121,8 +121,8 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
     };
 
     let lb: Object = serde_json::from_str(&body2).unwrap();
-    let rank = lb.payload;
-    println!("{}", rank);
+    let rankstr = lb.payload.to_string();
+    let rank = rankstr.parse::<i64>().unwrap();
 
     let mut regionstring = String::new();
     let mut lvlstring = String::new();
@@ -161,6 +161,10 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         _ => {}
     }
 
+    if rank <= 1000 {
+        lvlstring = "<:challenger:1488174686088204419>".to_string();
+    }
+
     match region.as_str() {
         "EU" => {
             regionstring = ":flag_eu:".to_string();
@@ -180,7 +184,7 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         _ => {}
     }
 
-    let embeds = CreateEmbed::new()
+    let mut embeds = CreateEmbed::new()
         .thumbnail(avatar)
         .title(format!("{username}'s Stats"))
         .description(format!("[FACEIT](https://www.faceit.com/en/players/{})", username))
@@ -188,6 +192,11 @@ pub async fn get_current_stats(_message: &str, searchtype: &str) -> CreateIntera
         .field("Level", format!("   {}", &lvlstring), true)
         .field("Region", format!("{} {}", upperregion, regionstring), true)
         .field("Country", format!("{} :flag_{}:", uppercountry, usercountry), true);
+
+    if rank <= 1000 {
+        embeds = embeds.field("Rank", format!("#{}", rank), true);
+    }
+
     return CreateInteractionResponseMessage::new().embed(embeds);
 }
 
